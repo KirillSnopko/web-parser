@@ -28,12 +28,17 @@ jobs:
           node apps.js
 
       # Сохраняем идентификатор последнего поста в репозиторий
-      - name: Commit last index file
+      - name: Commit workflow changes
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
+          # Check if there are changes to commit
+          if git diff --quiet; then
+          echo "No changes to commit"
+          else
           git add .
-          git commit -m "Update last post index" || echo "No changes to commit"
+          git commit -m "commit workflow changes"
           git push origin HEAD
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

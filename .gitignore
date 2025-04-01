@@ -3,3 +3,4 @@ generate.js
 .idea
 *.tar.gz
 *.zip
+.vs
