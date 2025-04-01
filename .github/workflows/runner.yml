@@ -1,0 +1,39 @@
+name: Script runner
+
+on:
+  workflow_dispatch: # Возможность запуска вручную
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Устанавливаем Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      # Устанавливаем зависимости
+      - name: Install dependencies
+        run: npm install
+
+      # Запускаем скрипт для скачивания постов
+      - name: Run script
+        run: |
+          node apps.js
+
+      # Сохраняем идентификатор последнего поста в репозиторий
+      - name: Commit last index file
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add .
+          git commit -m "Update last post index" || echo "No changes to commit"
+          git push origin HEAD
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

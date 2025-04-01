@@ -21,7 +21,7 @@ async function extractLinksAndSaveToCSV() {
     const stream = fs.createWriteStream(csvFilePath);
 
     // Write CSV header
-    stream.write('Date,Link,Id\n');
+    stream.write('Link\n');
 
     let currentDate = new Date(startDate);
     while (currentDate <= endDate) {
@@ -44,7 +44,8 @@ async function extractLinksAndSaveToCSV() {
                 if (href) {
                     var id = (href.split("app/")[1]).replace("id","");
                     // Write the date and link to the CSV file
-                    stream.write(`${formattedDate},${href},${id}\n`);
+                    //stream.write(`${formattedDate},${href},${id}\n`);
+                    stream.write(`https://apps.apple.com/us/app/id${id}\n`);
                 }
             });
         } catch (error) {
