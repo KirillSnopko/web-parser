@@ -21,6 +21,7 @@ async function extractLinksAndSaveToCSV() {
     const stream = fs.createWriteStream(csvFilePath);
 
     // Write CSV header
+    const uniqueLinks = new Set();
     stream.write('Link\n');
 
     let currentDate = new Date(startDate);
@@ -43,9 +44,12 @@ async function extractLinksAndSaveToCSV() {
                 const href = $(element).attr('href');
                 if (href) {
                     var id = (href.split("app/")[1]).replace("id","");
-                    // Write the date and link to the CSV file
-                    //stream.write(`${formattedDate},${href},${id}\n`);
-                    stream.write(`https://apps.apple.com/us/app/id${id}\n`);
+                    var link = `https://apps.apple.com/us/app/id${id}\n`;
+
+                    if(!uniqueLinks.has(href)){
+                        uniqueLinks.add(href);
+                        stream.write(link);
+                    }
                 }
             });
         } catch (error) {
