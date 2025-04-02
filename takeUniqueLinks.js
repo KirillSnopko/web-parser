@@ -2,9 +2,9 @@ const fs = require('fs');
 const csv = require('csv-parser');
 
 // Paths to the input CSV files and the output release file
-const file1Path = './app_ids.csv'; // Path to the first CSV file
-const file2Path = './extracted_links.csv'; // Path to the second CSV file
-const releaseFilePath = './release.csv'; // Path to the release file
+const file1Path = 'app_ids.csv'; // Path to the first CSV file
+const file2Path = 'extracted_links.csv'; // Path to the second CSV file
+const releaseFilePath = 'release.csv'; // Path to the release file
 
 // Call the main function
 processFilesAndWriteUniqueLinks(file1Path, file2Path, releaseFilePath);
@@ -19,9 +19,10 @@ function extractLinksFromCSV(filePath) {
     fs.createReadStream(filePath)
       .pipe(csv()) // Parse the CSV file
       .on('data', (row) => {
+        //console.log(row);
         // Assuming the column containing links is named 'link'
-        if (row.link) {
-          links.push(row.link.trim()); // Trim whitespace and add to the list
+        if (row.Link) {
+          links.push(row.Link.trim()); // Trim whitespace and add to the list
         }
       })
       .on('end', () => {
