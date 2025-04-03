@@ -17,7 +17,7 @@ function formatDate(date) {
 
 // Function to extract links and save to CSV
 async function extractLinksAndSaveToCSV() {
-    const csvFilePath = path.join(__dirname, 'extracted_links.csv');
+    const csvFilePath = path.join(__dirname, 'appadvice.csv');
     const stream = fs.createWriteStream(csvFilePath);
 
     // Write CSV header
