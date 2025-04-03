@@ -2,9 +2,9 @@ const fs = require('fs');
 const csv = require('csv-parser');
 
 // Paths to the input CSV files and the output release file
-const file1Path = 'app_ids.csv'; // Path to the first CSV file
-const file2Path = 'extracted_links.csv'; // Path to the second CSV file
-const releaseFilePath = 'release.csv'; // Path to the release file
+const file1Path = 'app_links/app_ids.csv'; // Path to the first CSV file
+const file2Path = 'app_links/clean_app_ids.csv'; // Path to the second CSV file
+const releaseFilePath = 'app_links/app_ids_clean.csv'; // Path to the release file
 
 // Call the main function
 processFilesAndWriteUniqueLinks(file1Path, file2Path, releaseFilePath);
@@ -43,8 +43,10 @@ async function processFilesAndWriteUniqueLinks(file1Path, file2Path, releaseFile
     const linksFromFile1 = await extractLinksFromCSV(file1Path);
     const linksFromFile2 = await extractLinksFromCSV(file2Path);
 
+    const uniqueLinks = linksFromFile1.filter(link => !linksFromFile2.includes(link));
+
     // Step 2: Combine the links and remove duplicates using a Set
-    const uniqueLinks = [...new Set([...linksFromFile1, ...linksFromFile2])];
+    //const uniqueLinks = [...new Set([...linksFromFile1, ...linksFromFile2])];
 
     // Step 3: Write the unique links to the release file
     const releaseFileContent = uniqueLinks.join('\n'); // Join links with newlines
