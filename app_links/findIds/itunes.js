@@ -1,12 +1,15 @@
 
 const fs = require('fs');
 const axios = require('axios');
+const path = require('path');
 
-const file1Path = 'appadvice.csv'; // Path to the first CSV file
-const file2Path = 'appRaven.csv'; // Path to the release file
-const testPath = 'app_links/test.csv';
+const maxRating = 4.1;
 
-processCSV(file2Path).catch(error => {
+const file1Path = path.join(__dirname, 'result', 'unique_ids_13.06.2025.csv');
+const outputFilePath = path.join(__dirname, 'result', 'unique_apps_13.06.2025.json');
+
+
+processCSV(file1Path).catch(error => {
     console.error('Произошла ошибка:', error);
 });
 
@@ -20,10 +23,8 @@ async function processCSV(filePath) {
     var count = lines.length;
 
     for (const line of lines) {
-       
-        console.log(`==========> осталось обработать ${count} ссылок`);
         count--;
-       
+
         const link = line.trim();
         const appId = extractAppId(link);
 
@@ -35,7 +36,7 @@ async function processCSV(filePath) {
         try {
             const appData = await getAppDataByAppId(appId);
 
-            if(appData==null){
+            if (appData == null) {
                 continue;
             }
 
@@ -53,6 +54,10 @@ async function processCSV(filePath) {
                 });
             }
 
+            if (appData.averageUserRating > maxRating) {
+                continue;
+            }
+
             // Добавляем результат в массив
             results.push({
                 Link: link,
@@ -63,13 +68,14 @@ async function processCSV(filePath) {
                 LastNegativeRating: negativeReview ? negativeReview['im:rating'].label : ''
             });
 
+            console.error(`[${results.length}] new item: rating=${appData.averageUserRating} | wait ${count} links \n===============================`);
+
         } catch (error) {
             console.error(`Ошибка при обработке приложения с ID: ${appId}`, error.message);
         }
     }
 
     // Записываем результаты в JSON файл
-    const outputFilePath = 'jsonResults/' + filePath.split('.csv')[0] + '_output.json';
     fs.writeFileSync(outputFilePath, JSON.stringify(results, null, 2), 'utf8');
     console.log(`Результаты успешно записаны в файл: ${outputFilePath}`);
 }

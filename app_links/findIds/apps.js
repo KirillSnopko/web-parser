@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 // Define the date range
-const startDate = new Date('2024-04-01');
-const endDate = new Date('2025-04-01');
+const startDate = new Date('2024-06-13');
+const endDate = new Date('2025-06-13');
 
 // Function to format a date as yyyy-mm-dd
 function formatDate(date) {
@@ -17,7 +17,7 @@ function formatDate(date) {
 
 // Function to extract links and save to CSV
 async function extractLinksAndSaveToCSV() {
-    const csvFilePath = path.join(__dirname, 'appadvice.csv');
+    const csvFilePath = path.join(__dirname,'result', 'appAdvice_ids_13.06.2025.csv');
     const stream = fs.createWriteStream(csvFilePath);
 
     // Write CSV header

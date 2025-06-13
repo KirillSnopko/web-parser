@@ -1,71 +1,146 @@
-const fs = require('fs');
+//Cобирает апки с внутренним айди платформы, потом нужно искать айди эпстора
+
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const app_limit = 5000;
+const ratings = 500;
+let apps_count = 0;
 
-const url = 'https://appraven.net/app/';
-const file2Path = 'appRaven.csv'; // Path to the release file
-const resultPath = 'appRavenToAppStore.csv';
+// Define the GraphQL query and variables
+const graphqlRequestTemplate = {
+    operationName: "GetNewApps",
+    variables: {
+        miniFilter: {
+            genreId: null,
+            price: "ANY",
+            ratingCount: ratings,
+            device: null
+        },
+        page: 1 // Start with page 1
+    },
+    query: `query GetNewApps($miniFilter: MiniFilterInput!, $page: Int!) {
+        newApps(miniFilter: $miniFilter, page: $page) {
+            content {
+                id
+                app {
+                    id
+                    title
+                    lastActivity {
+                        timestamp
+                        __typename
+                    }
+                    __typename
+                }
+                __typename
+            }
+            hasNext
+            nextPageable {
+                pageNumber
+                __typename
+            }
+            __typename
+        }
+    }`
+};
 
-processCSV(file2Path).catch(error => {
-    console.error('Произошла ошибка:', error);
-});
+// Function to send the GraphQL request and process the response
+async function fetchAppIdsUntilDate() {
+    const csvFilePath = path.join(__dirname, 'result', `appRaven_ids_new_release_r${ratings}_13.06.2025.csv`);
+    const stream = fs.createWriteStream(csvFilePath);
 
-async function processCSV(filePath) {
-    // Чтение CSV файла
-    const csvData = fs.readFileSync(filePath, 'utf8');
-    const lines = csvData.split('\n').filter(line => line.trim() !== '');
-
-    // Массив для хранения результатов
-    const results = [];
-    var count = lines.length;
-
-    const stream = fs.createWriteStream(resultPath);
     // Write CSV header
     stream.write('Link\n');
-    const uniqueLinks = new Set();
+
+    let currentPage = 1;
+    let shouldContinue = true;
+
     try {
-        for (const line of lines) {
+        console.log("Starting to fetch data...");
+        const uniqueLinks = new Set();
 
-            console.log(`==========> осталось обработать ${count} ссылок`);
-            count--;
+        while (shouldContinue && apps_count <= app_limit) {
+            console.log(`Fetching page ${currentPage}...`);
 
-            const ravenId = line.trim();
-            const appId = extractAppId(ravenId);
+            // Update the GraphQL request with the current page number
+            const graphqlRequest = { ...graphqlRequestTemplate };
+            graphqlRequest.variables.page = currentPage;
 
-            if (!appId) {
-                console.error(`Не удалось извлечь ID из ссылки: ${ravenId}`);
-                continue;
+            // Send the request to the GraphQL endpoint
+            const response = await axios.post('https://appraven.net/appraven/graphql', graphqlRequest, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // Extract the content array from the response
+            const contentArray = response.data?.data?.newApps?.content;
+            const hasNext = response.data?.data?.newApps?.hasNext;
+            const nextPageNumber = response.data?.data?.newApps?.nextPageable?.pageNumber;
+
+            if (!contentArray || contentArray.length === 0) {
+                console.log("No more data found.");
+                break;
             }
 
-            try {
-                const appstoreId = await getAppStoreId(appId);
+            apps_count += contentArray.length;
+            console.log(`Processing ${contentArray.length} apps on page ${currentPage}...`);
 
-                if (appstoreId == null) {
-                    continue;
+            // Flag to check if any timestamp is >= 2024-04-01
+            let foundRecentActivity = false;
+
+            for (const item of contentArray) {
+                const appId = item.app?.id;
+                const lastActivityTimestamp = item.app?.lastActivity?.timestamp;
+
+                if (appId && lastActivityTimestamp) {
+
+                    var appStoreId = await getAppStoreId(appId);
+
+                    if (appStoreId != null) {
+                        var link = `https://apps.apple.com/us/app/id${appStoreId}\n`;
+
+                        if (!uniqueLinks.has(link)) {
+                            uniqueLinks.add(link);
+                            stream.write(link);
+                        }
+                    }
+
+                    // Check if the lastActivity timestamp is >= 2024-01-01
+                    const activityDate = new Date(lastActivityTimestamp);
+                    const cutoffDate = new Date('2024-01-01');
+                    if (activityDate >= cutoffDate) {
+                        foundRecentActivity = true;
+                    }
                 }
+            }
 
-                var applink = `https://apps.apple.com/us/app/id${appstoreId}\n`;
-
-                if (!uniqueLinks.has(applink)) {
-                    uniqueLinks.add(applink);
-                    stream.write(applink);
-                }
-
-
-
-            } catch (error) {
-                console.error(`Ошибка при обработке приложения с ID: ${appId}`, error.message);
+            // Determine if we should continue fetching more pages
+            if (!foundRecentActivity || !hasNext) {
+                console.log("No more recent activity found or no more pages available.");
+                shouldContinue = false;
+            } else {
+                currentPage = nextPageNumber; // Move to the next page
             }
         }
+
+        console.log(`COUNT=${apps_count}`);
+        console.log(`Data fetching complete. App IDs saved to ${csvFilePath}`);
+    } catch (error) {
+        console.error("Error fetching data:", error.message);
     } finally {
         // Close the CSV file stream
         stream.end();
     }
 }
 
+// Run the script
+fetchAppIdsUntilDate();
+
 
 async function getAppStoreId(appId) {
     try {
-        const graphqlRequest = { ...graphqlRequestTemplate };
+        const graphqlRequest = { ...graphqlRequestFindId };
         graphqlRequest.variables.id = appId;
 
         // Send the request to the GraphQL endpoint
@@ -83,13 +158,8 @@ async function getAppStoreId(appId) {
     }
 }
 
-function extractAppId(url) {
-    const match = url.match(/id(\d+)/);
-    return match ? match[1] : null;
-}
-
 // Define the GraphQL query and variables
-const graphqlRequestTemplate = {
+const graphqlRequestFindId = {
     operationName: "GetAppDetail",
     variables: {
         id: 0

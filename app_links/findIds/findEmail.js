@@ -1,18 +1,23 @@
 const fs = require('fs');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const path = require('path');
 
 // Path to your JSON file
-const filePath = './appRaven_output.json'; // Replace with your actual file path
+const filePath = path.join(__dirname, 'result', 'unique_apps_13.06.2025.json');
+const outputFilePath = path.join(__dirname, 'result', 'email_unique_apps_13.06.2025.json');
 processJsonFile(filePath);
 
 
 // Main function to process the JSON file
 async function processJsonFile(filePath) {
+
+  fs.writeFileSync(outputFilePath, JSON.stringify({ test: true }, null, 2), 'utf8');
+
   try {
     // Read the JSON file
     const rawData = fs.readFileSync(filePath, 'utf8');
-    const apps = JSON.parse(rawData);
+    var apps = JSON.parse(rawData);
 
     var count = apps.length;
 
@@ -52,8 +57,10 @@ async function processJsonFile(filePath) {
       }
     }
 
+    apps = apps.filter(x => x.Email != null);
+
     // Save the updated JSON file
-    fs.writeFileSync(filePath, JSON.stringify(apps, null, 2), 'utf8');
+    fs.writeFileSync(outputFilePath, JSON.stringify(apps, null, 2), 'utf8');
     console.log('Updated JSON file saved successfully.');
   } catch (error) {
     console.error('Error reading or processing the JSON file:', error.message);

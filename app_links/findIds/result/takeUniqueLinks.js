@@ -1,10 +1,11 @@
 const fs = require('fs');
 const csv = require('csv-parser');
+const path = require('path');
 
 // Paths to the input CSV files and the output release file
-const file1Path = 'app_links/app_ids.csv'; // Path to the first CSV file
-const file2Path = 'app_links/clean_app_ids.csv'; // Path to the second CSV file
-const releaseFilePath = 'app_links/appRaven.csv'; // Path to the release file
+const file1Path = path.join(__dirname, 'appAdvice_ids_13.06.2025.csv'); // Path to the first CSV file
+const file2Path = path.join(__dirname, 'appRaven_ids_13.06.2025.csv'); // Path to the second CSV file
+const releaseFilePath = path.join(__dirname, 'unique_ids_13.06.2025.csv'); // Path to the release file
 
 // Call the main function
 processFilesAndWriteUniqueLinks(file1Path, file2Path, releaseFilePath);
@@ -43,7 +44,13 @@ async function processFilesAndWriteUniqueLinks(file1Path, file2Path, releaseFile
     const linksFromFile1 = await extractLinksFromCSV(file1Path);
     const linksFromFile2 = await extractLinksFromCSV(file2Path);
 
-    const uniqueLinks = linksFromFile1.filter(link => !linksFromFile2.includes(link));
+    const uniqueSet = new Set(linksFromFile1);
+
+    for (const item of linksFromFile2) {
+      uniqueSet.add(item);
+    }
+
+    const uniqueLinks = [...uniqueSet];
 
     // Step 2: Combine the links and remove duplicates using a Set
     //const uniqueLinks = [...new Set([...linksFromFile1, ...linksFromFile2])];
@@ -52,7 +59,7 @@ async function processFilesAndWriteUniqueLinks(file1Path, file2Path, releaseFile
     const releaseFileContent = uniqueLinks.join('\n'); // Join links with newlines
     fs.writeFileSync(releaseFilePath, releaseFileContent);
 
-    console.log(`Unique links have been written to ${releaseFilePath}`);
+    console.log(`Unique links have been written to ${releaseFilePath}. Count=${uniqueLinks.length}`);
   } catch (error) {
     console.error('Error processing files:', error);
   }
