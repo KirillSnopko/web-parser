@@ -5,8 +5,8 @@ const path = require('path');
 
 const maxRating = 4.1;
 
-const file1Path = path.join(__dirname, 'result', 'unique_ids_13.06.2025.csv');
-const outputFilePath = path.join(__dirname, 'result', 'unique_apps_13.06.2025.json');
+const file1Path = path.join(__dirname, 'result', 'missing_links.csv');
+const outputFilePath = path.join(__dirname, 'result', 'missing_unique_apps_14.06.2025.json');
 
 
 processCSV(file1Path).catch(error => {
@@ -54,9 +54,9 @@ async function processCSV(filePath) {
                 });
             }
 
-            if (appData.averageUserRating > maxRating) {
+            /*if (appData.averageUserRating > maxRating) {
                 continue;
-            }
+            }*/
 
             // Добавляем результат в массив
             results.push({
